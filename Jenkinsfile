@@ -26,9 +26,14 @@ pipeline {
             }
         }
 
-        stage('Build Docker') {
+       stage('Build Docker') {
             steps {
-                sh 'docker build -t $IMAGE .'
+                sh '''
+                whoami
+                id
+                docker ps
+                docker build -t $IMAGE .
+                '''
             }
         }
 
