@@ -69,14 +69,14 @@ pipeline {
             steps {
                 withCredentials([file(credentialsId: 'MINIKUBE_KUBECONFIG', variable: 'KUBECONFIG')]) {
                     sh '''
-                    # Download and setup kubectl if not cached
                     if ! command -v kubectl &> /dev/null; then
                         curl -LO "https://dl.k8s.io/release/v1.36.2/bin/linux/amd64/kubectl"
                         chmod +x ./kubectl
                         mv ./kubectl /usr/local/bin/kubectl
                     fi
-            
-                    # Force kubectl to bypass certificate constraints dynamically
+                    # Dynamically replace the string template with the live build variable
+                    sed -i "s/BUILD_TAG/${BUILD_NUMBER}/g" k8s/deployment.yaml
+                    # Execute deployment
                     kubectl --kubeconfig=$KUBECONFIG apply -f k8s/ --insecure-skip-tls-verify=true --validate=false
                     '''
                 }
