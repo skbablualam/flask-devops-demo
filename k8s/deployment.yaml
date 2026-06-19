@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: flask-devops-demo
-        image: YOUR_DOCKERHUB_USER/flask-devops-demo:v1
+        image: skbablualam03031997/flask-devops-demo:${BUILD_NUMBER}
 
         ports:
         - containerPort: 5000
