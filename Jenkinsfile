@@ -66,18 +66,20 @@ pipeline {
         
         stage('Deploy to Kubernetes') {
             steps {
-                sh '''
-                # Download the stable kubectl binary
-                curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-                # Make it executable and move it to a system path
-                chmod +x ./kubectl
-                mv ./kubectl /usr/local/bin/kubectl
-                # Run your deployment
-                kubectl apply -f k8s/
-                '''
+                // This binds your uploaded secret file to a temporary file path variable ($KUBECONFIG)
+                withCredentials([file(credentialsId: 'MINIKUBE_KUBECONFIG', variable: 'KUBECONFIG')]) {
+                    sh '''
+                    # If kubectl isn't persisted across builds, keep these 3 lines:
+                    curl -LO "https://dl.k8s.io/release/v1.36.2/bin/linux/amd64/kubectl"
+                    chmod +x ./kubectl
+                    mv ./kubectl /usr/local/bin/kubectl
+            
+                    # Explicitly tell kubectl to use the authenticated Jenkins secret file
+                    kubectl --kubeconfig=$KUBECONFIG apply -f k8s/
+                    '''
+                }
             }
         }
-    }
     post {
         always {
             sh 'docker logout'
