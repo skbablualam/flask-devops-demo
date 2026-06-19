@@ -63,12 +63,24 @@ pipeline {
                 }
             }
         }
-
-        stage('Deploy') {
+        
+        stage('Deploy to Kubernetes') {
             steps {
-                sh 'kubectl apply -f k8s/'
+                sh '''
+                # Download the stable kubectl binary
+                curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+                # Make it executable and move it to a system path
+                chmod +x ./kubectl
+                mv ./kubectl /usr/local/bin/kubectl
+                # Run your deployment
+                kubectl apply -f k8s/
+                '''
             }
         }
-        
+    }
+    post {
+        always {
+            sh 'docker logout'
+        }
     }
 }
