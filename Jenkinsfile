@@ -36,6 +36,16 @@ pipeline {
                 '''
             }
         }
+        stage('Debug') {
+             steps {
+                sh '''
+                whoami
+                id
+                ls -l /var/run/docker.sock
+                docker ps || true
+                '''
+            }
+        }
 
         stage('Push Docker') {
             steps {
