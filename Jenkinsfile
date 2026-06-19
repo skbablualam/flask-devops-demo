@@ -64,13 +64,11 @@ pipeline {
             }
         }
 
-        // Uncomment later after kubectl is configured
-        /*
         stage('Deploy') {
             steps {
                 sh 'kubectl apply -f k8s/'
             }
         }
-        */
+        
     }
 }
