@@ -3,17 +3,19 @@ pipeline {
     agent any
 
     environment {
-        IMAGE = "YOUR_DOCKERHUB_USER/flask-devops-demo:v1"
+    IMAGE = "skbablualam03031997/flask-devops-demo:${BUILD_NUMBER}"
     }
 
-    stages {
-
-        stage('Checkout') {
-            steps {
-                git branch: 'main',
-                url: 'https://github.com/skbablualam/flask-devops-demo.git'
-            }
+    stage('Test') {
+        steps {
+            sh '''
+            python3 -m venv venv
+            . venv/bin/activate
+            pip install -r requirements.txt
+            pytest
+            '''
         }
+    }
 
         stage('Test') {
             steps {
@@ -36,14 +38,22 @@ pipeline {
 
         stage('Push Docker') {
             steps {
-                sh 'docker push $IMAGE'
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub-creds',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )
+        ])      {
+            sh '''
+            echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+            docker push $IMAGE
+            '''
             }
         }
-
+    } 
         stage('Deploy') {
             steps {
                 sh 'kubectl apply -f k8s/'
-            }
-        }
     }
 }
