@@ -28,6 +28,37 @@ GitHub → Jenkins Pipeline → Docker Build → Docker Hub → Kubernetes (Mini
 
 ---
 
+## 🚀 Pipeline Architecture & Workflow
+
+The project utilizes a fully automated Declarative Jenkins Pipeline (`Jenkinsfile`) that handles the lifecycle of the application:
+
+1. **SCM Checkout:** Pulls the latest code branches dynamically from GitHub.
+2. **Automated Testing:** Sets up an isolated Python virtual environment, installs application requirements, and executes the suite using `pytest`.
+3. **Docker Image Build:** Compiles the application layer into a Docker container image securely tagged with the current unique Jenkins build number (`skbablualam03031997/flask-devops-demo:${BUILD_NUMBER}`).
+4. **Daemon Debugging:** Runs health checks on the underlying Docker socket to maintain resource uptime.
+5. **Secure Push:** Authenticates against Docker Hub using vaulted credentials and pushes the immutable image artifact.
+6. **Kubernetes Deployment:** Downloads the correct `kubectl` binary on the fly, mounts an optimized standalone `kubeconfig` configuration file, updates deployment manifests with `sed`, and rolls out the changes.
+
+---
+
+## 🛠️ Infrastructure Requirements (macOS)
+
+To run this pipeline locally, your MacBook Pro must have the following configuration:
+
+* **Docker Desktop for Mac:** Running with the Docker daemon exposed via the default socket `/var/run/docker.sock`.
+* **Minikube v1.38+:** Configured and running with the `docker` driver.
+* **Jenkins Server:** Running inside a container or as a service with root permissions to handle container engines.
+
+### 🌐 Cross-Container Network Routing
+
+Because Jenkins runs inside an isolated container, it cannot reach the Minikube API server via `127.0.0.1`. The deployment stage resolves this restriction by using **`host.docker.internal`** to securely route traffic out of the Jenkins container back onto your macOS host network space.
+
+To implement this safely, a standalone configuration file is created on the host machine:
+
+```bash
+kubectl config view --flatten --minify --raw | grep -v "certificate-authority-data:" > ~/Desktop/minikube-jenkins-config
+```
+
 ## 🏗️ Tech Stack
 
 - Python Flask
