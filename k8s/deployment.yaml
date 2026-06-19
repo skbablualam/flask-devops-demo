@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flask-devops-demo
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: flask-devops-demo
+
+  template:
+    metadata:
+      labels:
+        app: flask-devops-demo
+
+    spec:
+      containers:
+      - name: flask-devops-demo
+        image: YOUR_DOCKERHUB_USER/flask-devops-demo:v1
+
+        ports:
+        - containerPort: 5000
