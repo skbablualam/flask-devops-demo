@@ -26,7 +26,7 @@ pipeline {
             }
         }
 
-       stage('Build Docker') {
+        stage('Build Docker') {
             steps {
                 sh '''
                 whoami
@@ -36,6 +36,7 @@ pipeline {
                 '''
             }
         }
+        
         stage('Debug') {
              steps {
                 sh '''
@@ -80,9 +81,11 @@ pipeline {
                 }
             }
         }
+    } // <-- Added missing brace to close 'stages'
+
     post {
         always {
             sh 'docker logout'
         }
     }
-}
+} // <-- Added missing brace to close 'pipeline'
