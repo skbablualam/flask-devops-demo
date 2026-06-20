@@ -42,33 +42,25 @@ pipeline {
         stage('SonarQube Code Analysis') {
             steps {
                 sh '''
-                echo "========== Running SonarQube Analysis =========="
+                echo "========== Running SonarCloud Analysis =========="
                 python3 -m venv venv
                 . venv/bin/activate
                 pip install -r requirements.txt
                 pip install pylint flake8 bandit
-                
-                # Download SonarQube Scanner
-                if [ ! -d "sonar-scanner" ]; then
-                    wget -q https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006-linux.zip
-                    unzip -q sonar-scanner-cli-5.0.1.3006-linux.zip
-                    mv sonar-scanner-5.0.1.3006-linux sonar-scanner
-                fi
                 
                 # Run static analysis tools
                 flake8 app.py test_app.py --count --select=E9,F63,F7,F82 --show-source --statistics || true
                 pylint app.py --exit-zero -r no > pylint-report.txt || true
                 bandit -r . -f json -o bandit-report.json || true
                 
-                # Run SonarQube Scanner
-                export PATH=$PATH:$(pwd)/sonar-scanner/bin
-                sonar-scanner \
-                  -Dsonar.projectBaseDir=. \
-                  -Dsonar.host.url=$SONAR_HOST_URL \
-                  -Dsonar.login=$SONAR_LOGIN \
-                  -Dsonar.python.coverage.reportPaths=coverage.xml
+                # Run SonarCloud Scanner via Docker to avoid Alpine Linux binary errors
+                docker run --rm \
+                  -e SONAR_HOST_URL="$SONAR_HOST_URL" \
+                  -e SONAR_TOKEN="$SONAR_LOGIN" \
+                  -v "$(pwd):/usr/src" \
+                  sonarsource/sonar-scanner-cli
                 
-                echo "========== SonarQube Analysis Completed =========="
+                echo "========== SonarCloud Analysis Completed =========="
                 '''
             }
         }
