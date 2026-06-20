@@ -2,21 +2,81 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: flask-devops-demo
+  namespace: default
+  labels:
+    app: flask-devops-demo
+    version: v1
 spec:
-  replicas: 2
+  replicas: 3
   selector:
     matchLabels:
       app: flask-devops-demo
-
   template:
     metadata:
       labels:
         app: flask-devops-demo
-
+        version: v1
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "5000"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
       - name: flask-devops-demo
-        image: skbablualam03031997/flask-devops-demo:BUILD_TAG
-
+        image: flask-devops-demo:latest
+        imagePullPolicy: Never
         ports:
-        - containerPort: 5000
+        - name: http
+          containerPort: 5000
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: flask-devops-demo-hpa
+  namespace: default
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: flask-devops-demo
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 80
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
