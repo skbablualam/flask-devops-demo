@@ -101,10 +101,10 @@ pipeline {
                 
                 # Scan the Docker image
                 trivy image --severity HIGH,CRITICAL \
-                           --exit-code 0 \
-                           --format json \
-                           --output trivy-report.json \
-                           $IMAGE || true
+                            --exit-code 0 \
+                            --format json \
+                            --output trivy-report.json \
+                            $IMAGE || true
                 
                 # Display summary
                 trivy image --severity HIGH,CRITICAL $IMAGE || true
@@ -450,8 +450,8 @@ data:
             regex: flask-devops-demo
           - source_labels: [__address__]
             action: replace
-            regex: ([^:]+)(?::\d+)?
-            replacement: \${1}:5000
+            regex: ([^:]+)(?::\\d+)?
+            replacement: ${1}:5000
             target_label: __address__
 EOF
 
@@ -491,7 +491,7 @@ data:
                 "expr": "rate(flask_http_requests_total[5m])"
               }
             ]
-          },
+          }
           {
             "title": "Response Time",
             "targets": [
@@ -504,7 +504,7 @@ data:
             "title": "Error Rate",
             "targets": [
               {
-                "expr": "rate(flask_http_requests_total{status=~\"5..\"}[5m])"
+                "expr": "rate(flask_http_requests_total{status=~\\"5..\\"})"
               }
             ]
           },
@@ -547,7 +547,7 @@ EOF
             # Archive test reports
             '''
             archiveArtifacts artifacts: '**/test-*.xml,coverage.xml,trivy-report.json,bandit-report.json,pylint-report.txt', 
-                            allowEmptyArchive: true
+                             allowEmptyArchive: true
             junit testResults: '**/test-results.xml', allowEmptyResults: true
         }
 
