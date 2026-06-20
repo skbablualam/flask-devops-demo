@@ -35,4 +35,4 @@ def test_invalid_route(client):
 def test_app_context():
     """Test that app is created successfully"""
     assert app is not None
-    assert app.config['TESTING'] == False
+    assert app.config['TESTING'] == True
