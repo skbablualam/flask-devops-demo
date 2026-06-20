@@ -46,19 +46,23 @@ pipeline {
                 python3 -m venv venv
                 . venv/bin/activate
                 pip install -r requirements.txt
-                pip install pbr pylint flake8 bandit
-                
                 # Run static analysis tools
                 flake8 app.py test_app.py --count --select=E9,F63,F7,F82 --show-source --statistics || true
                 pylint app.py --exit-zero -r no > pylint-report.txt || true
                 bandit -r . -f json -o bandit-report.json || true
                 
-                # Run SonarCloud Scanner via Docker to avoid Alpine Linux binary errors
-                docker run --rm \
-                  -e SONAR_HOST_URL="$SONAR_HOST_URL" \
-                  -e SONAR_TOKEN="$SONAR_LOGIN" \
-                  -v "$(pwd):/usr/src" \
-                  sonarsource/sonar-scanner-cli
+                # Download Generic SonarQube Scanner (No bundled JRE, uses Jenkins native Java)
+                if [ ! -d "sonar-scanner" ]; then
+                    wget -q https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.1.3006.zip
+                    unzip -q sonar-scanner-cli-5.0.1.3006.zip
+                    mv sonar-scanner-5.0.1.3006 sonar-scanner
+                fi
+                
+                # Run SonarCloud Scanner directly
+                export PATH=$PATH:$(pwd)/sonar-scanner/bin
+                sonar-scanner \
+                  -Dsonar.host.url=$SONAR_HOST_URL \
+                  -Dsonar.login=$SONAR_LOGIN
                 
                 echo "========== SonarCloud Analysis Completed =========="
                 '''
