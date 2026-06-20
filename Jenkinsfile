@@ -58,11 +58,14 @@ pipeline {
                     mv sonar-scanner-5.0.1.3006 sonar-scanner
                 fi
                 
-                # Run SonarCloud Scanner directly
                 export PATH=$PATH:$(pwd)/sonar-scanner/bin
+                
                 sonar-scanner \
                   -Dsonar.host.url=$SONAR_HOST_URL \
-                  -Dsonar.login=$SONAR_LOGIN
+                  -Dsonar.token=$SONAR_LOGIN \
+                  -Dsonar.organization=flask-devops-demo \
+                  -Dsonar.projectKey=flask-devops-demo \
+                  -Dsonar.sources=.
                 
                 echo "========== SonarCloud Analysis Completed =========="
                 '''
