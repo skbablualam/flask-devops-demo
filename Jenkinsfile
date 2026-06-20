@@ -46,7 +46,7 @@ pipeline {
                 python3 -m venv venv
                 . venv/bin/activate
                 pip install -r requirements.txt
-                pip install pylint flake8 bandit
+                pip install pbr pylint flake8 bandit
                 
                 # Run static analysis tools
                 flake8 app.py test_app.py --count --select=E9,F63,F7,F82 --show-source --statistics || true
