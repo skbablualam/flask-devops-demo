@@ -89,27 +89,27 @@ pipeline {
             steps {
                 sh '''
                 echo "========== Running Trivy Security Scan =========="
-                
-                # Use official install script and drop binary in local workspace (no root needed)
+                        
+                # Use official install script without a hardcoded version to get the latest secure release
                 if [ ! -f "trivy-bin/trivy" ]; then
-                    echo "Downloading Trivy..."
-                    mkdir -p trivy-bin
-                    curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b $(pwd)/trivy-bin v0.52.2
+                  echo "Downloading Latest Trivy..."
+                  mkdir -p trivy-bin
+                  curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b $(pwd)/trivy-bin
                 fi
-                
+                        
                 # Add the local folder to the PATH
                 export PATH=$PATH:$(pwd)/trivy-bin
-                
+                        
                 # Scan the Docker image
                 trivy image --severity HIGH,CRITICAL \
                             --exit-code 0 \
                             --format json \
                             --output trivy-report.json \
                             $IMAGE || true
-                
-                # Display summary
+                        
+                # Display summary in console
                 trivy image --severity HIGH,CRITICAL $IMAGE || true
-                
+                        
                 echo "========== Trivy Scan Completed =========="
                 '''
             }
@@ -492,7 +492,7 @@ data:
                 "expr": "rate(flask_http_requests_total[5m])"
               }
             ]
-          }
+          },
           {
             "title": "Response Time",
             "targets": [
@@ -505,7 +505,7 @@ data:
             "title": "Error Rate",
             "targets": [
               {
-                "expr": "rate(flask_http_requests_total{status=~\\"5..\\"})"
+                "expr": "rate(flask_http_requests_total{status=~\"5..\"})"
               }
             ]
           },
