@@ -140,7 +140,7 @@ flask-devops-demo/
 ```
 
 ---
-
+![alt text](<Screenshot 1948-03-31 at 1.14.04 PM.png>)
 ## 📊 Kubernetes Management
 
 ```bash

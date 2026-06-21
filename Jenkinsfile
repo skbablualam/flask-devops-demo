@@ -137,33 +137,34 @@ pipeline {
 
         stage('Helm Chart Deployment') {
             steps {
-                sh '''
-                echo "========== Setting up Helm Deployment =========="
-                
-                # Install Helm standalone binary locally (no root or openssl needed)
-                if ! command -v helm &> /dev/null; then
-                    echo "Downloading Helm..."
-                    mkdir -p helm-bin
-                    wget -qO helm.tar.gz https://get.helm.sh/helm-v3.15.2-linux-amd64.tar.gz
-                    tar zxvf helm.tar.gz
-                    mv linux-amd64/helm $(pwd)/helm-bin/helm
-                    chmod +x $(pwd)/helm-bin/helm
-                    rm -rf helm.tar.gz linux-amd64
-                fi
-                
-                # Add the local folder to the PATH
-                export PATH=$PATH:$(pwd)/helm-bin
-                
-                # Add/Update Helm repository
-                helm repo add bitnami https://charts.bitnami.com/bitnami || true
-                helm repo update
-                
-                # Create helm charts directory if not exists
-                if [ ! -d "helm/flask-devops-demo" ]; then
-                    mkdir -p helm/flask-devops-demo/{templates,charts}
+                withCredentials([file(credentialsId: 'MINIKUBE_KUBECONFIG', variable: 'KUBECONFIG')]) {
+                    sh '''
+                    echo "========== Setting up Helm Deployment =========="
                     
-                    # Create Chart.yaml
-                    cat > helm/flask-devops-demo/Chart.yaml << 'EOF'
+                    # Install Helm standalone binary locally (no root or openssl needed)
+                    if ! command -v helm &> /dev/null; then
+                        echo "Downloading Helm..."
+                        mkdir -p helm-bin
+                        wget -qO helm.tar.gz https://get.helm.sh/helm-v3.15.2-linux-amd64.tar.gz
+                        tar zxvf helm.tar.gz
+                        mv linux-amd64/helm $(pwd)/helm-bin/helm
+                        chmod +x $(pwd)/helm-bin/helm
+                        rm -rf helm.tar.gz linux-amd64
+                    fi
+                    
+                    # Add the local folder to the PATH
+                    export PATH=$PATH:$(pwd)/helm-bin
+                    
+                    # Add/Update Helm repository
+                    helm repo add bitnami https://charts.bitnami.com/bitnami || true
+                    helm repo update
+                    
+                    # Create helm charts directory if not exists
+                    if [ ! -d "helm/flask-devops-demo" ]; then
+                        mkdir -p helm/flask-devops-demo/{templates,charts}
+                        
+                        # Create Chart.yaml
+                        cat > helm/flask-devops-demo/Chart.yaml << 'EOF'
 apiVersion: v2
 name: flask-devops-demo
 description: A Helm chart for Flask DevOps Demo
@@ -177,8 +178,8 @@ maintainers:
   - name: DevOps Team
 EOF
 
-                    # Create values.yaml
-                    cat > helm/flask-devops-demo/values.yaml << 'EOF'
+                        # Create values.yaml
+                        cat > helm/flask-devops-demo/values.yaml << 'EOF'
 replicaCount: 3
 
 image:
@@ -229,8 +230,8 @@ grafana:
   dashboards: true
 EOF
 
-                    # Create Deployment template
-                    cat > helm/flask-devops-demo/templates/deployment.yaml << 'EOF'
+                        # Create Deployment template
+                        cat > helm/flask-devops-demo/templates/deployment.yaml << 'EOF'
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -271,8 +272,8 @@ spec:
           {{- toYaml .Values.resources | nindent 12 }}
 EOF
 
-                    # Create Service template
-                    cat > helm/flask-devops-demo/templates/service.yaml << 'EOF'
+                        # Create Service template
+                        cat > helm/flask-devops-demo/templates/service.yaml << 'EOF'
 apiVersion: v1
 kind: Service
 metadata:
@@ -290,8 +291,8 @@ spec:
     {{- include "flask-devops-demo.selectorLabels" . | nindent 4 }}
 EOF
 
-                    # Create helpers template
-                    cat > helm/flask-devops-demo/templates/_helpers.tpl << 'EOF'
+                        # Create helpers template
+                        cat > helm/flask-devops-demo/templates/_helpers.tpl << 'EOF'
 {{- define "flask-devops-demo.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
@@ -320,21 +321,23 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 EOF
-                fi
-                
-                # Validate Helm chart
-                helm lint helm/flask-devops-demo
-                
-                # Dry run deployment
-                helm upgrade --install $HELM_RELEASE_NAME helm/flask-devops-demo \
-                    --namespace $HELM_NAMESPACE \
-                    --create-namespace \
-                    --values helm/flask-devops-demo/values.yaml \
-                    --set image.tag=$BUILD_NUMBER \
-                    --dry-run --debug
-                
-                echo "========== Helm Chart Ready =========="
-                '''
+                    fi
+                    
+                    # Validate Helm chart
+                    helm lint helm/flask-devops-demo
+                    
+                    # Dry run deployment with the Kubeconfig file
+                    helm upgrade --install $HELM_RELEASE_NAME helm/flask-devops-demo \
+                        --kubeconfig=$KUBECONFIG \
+                        --namespace $HELM_NAMESPACE \
+                        --create-namespace \
+                        --values helm/flask-devops-demo/values.yaml \
+                        --set image.tag=$BUILD_NUMBER \
+                        --dry-run --debug
+                    
+                    echo "========== Helm Chart Ready =========="
+                    '''
+                }
             }
         }
 
