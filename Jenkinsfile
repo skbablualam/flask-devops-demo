@@ -140,10 +140,19 @@ pipeline {
                 sh '''
                 echo "========== Setting up Helm Deployment =========="
                 
-                # Install Helm if not present
+                # Install Helm standalone binary locally (no root or openssl needed)
                 if ! command -v helm &> /dev/null; then
-                    curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+                    echo "Downloading Helm..."
+                    mkdir -p helm-bin
+                    wget -qO helm.tar.gz https://get.helm.sh/helm-v3.15.2-linux-amd64.tar.gz
+                    tar zxvf helm.tar.gz
+                    mv linux-amd64/helm $(pwd)/helm-bin/helm
+                    chmod +x $(pwd)/helm-bin/helm
+                    rm -rf helm.tar.gz linux-amd64
                 fi
+                
+                # Add the local folder to the PATH
+                export PATH=$PATH:$(pwd)/helm-bin
                 
                 # Add/Update Helm repository
                 helm repo add bitnami https://charts.bitnami.com/bitnami || true
