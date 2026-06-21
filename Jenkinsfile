@@ -90,12 +90,14 @@ pipeline {
                 sh '''
                 echo "========== Running Trivy Security Scan =========="
                 
-                # Install Trivy if not present
+                # Install Trivy standalone binary (Alpine-compatible)
                 if ! command -v trivy &> /dev/null; then
-                    wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | apt-key add -
-                    echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | tee -a /etc/apt/sources.list.d/trivy.list
-                    apt-get update
-                    apt-get install -y trivy
+                    echo "Downloading Trivy..."
+                    wget -qO trivy.tar.gz https://github.com/aquasecurity/trivy/releases/download/v0.52.1/trivy_0.52.1_Linux-64bit.tar.gz
+                    tar zxvf trivy.tar.gz trivy
+                    chmod +x trivy
+                    mv trivy /usr/local/bin/
+                    rm trivy.tar.gz
                 fi
                 
                 # Scan the Docker image
